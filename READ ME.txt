@@ -1,0 +1,13 @@
+# Administración de Sistemas
+
+Repositorio de prácticas de Administración de Sistemas.
+
+## Estructura
+
+- Practica1_InstalacionSO: Instalación de Alpine Linux y Windows Server
+- Practica2_DHCP: Servidor DHCP automatizado
+- Practica3_DNS: Servidor DNS automatizado  
+- Practica4_SSH: Acceso remoto y refactorización
+
+## Autor
+Camila Macías
