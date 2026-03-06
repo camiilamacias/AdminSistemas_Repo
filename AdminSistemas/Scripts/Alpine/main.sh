@@ -3,13 +3,14 @@ set -eu
 
 BASE_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 
-# Cargar librerías
+# Cargar librerias
 . "$BASE_DIR/lib/colors.sh"
 . "$BASE_DIR/lib/common.sh"
 . "$BASE_DIR/lib/diagnostico.sh"
 . "$BASE_DIR/lib/dhcp_kea.sh"
 . "$BASE_DIR/lib/dns_bind.sh"
 . "$BASE_DIR/lib/ssh.sh"
+. "$BASE_DIR/lib/ftp_vsftpd.sh"
 
 require_root || exit 1
 
@@ -25,7 +26,8 @@ while true; do
   echo -e "${LIGHT_PINK}[6] DNS (BIND) - Estado${NC}"
   echo -e "${LIGHT_PINK}[7] DNS (BIND) - Alta dominio${NC}"
   echo -e "${LIGHT_PINK}[8] DNS (BIND) - Baja dominio${NC}"
-  echo -e "${LIGHT_PINK}[9] SSH - Gestión${NC}"
+  echo -e "${LIGHT_PINK}[9] SSH - Gestion${NC}"
+  echo -e "${LIGHT_PINK}[10] FTP (vsftpd)${NC}"
   echo -e "${LIGHT_PINK}[0] Salir${NC}"
   printf "${SOFT_PINK}Opción: ${NC}"
   read op
@@ -40,6 +42,7 @@ while true; do
     7) dns_alta ;;
     8) dns_baja ;;
     9) ssh_menu ;;
+    10) ftp_menu ;;
     0) exit 0 ;;
     *) echo -e "${HOT_PINK}Opción inválida.${NC}" ;;
   esac
