@@ -3,7 +3,7 @@
 # utilidades.sh — Funciones utilitarias generales
 # Proyecto : Aprovisionamiento Web Automatizado
 # SO       : Alpine Linux 3.23
-# Uso      : source ./lib/utilidades.sh  (no ejecutar directamente)
+# Uso      : source ./lib/utilidades.sh  
 # =============================================================================
 
 # -----------------------------------------------------------------------------
