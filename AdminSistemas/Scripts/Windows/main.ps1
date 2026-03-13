@@ -1,56 +1,70 @@
-Set-StrictMode -Version Latest
-$ErrorActionPreference = "Stop"
+# =============================================================================
+# Main.ps1 - Script principal de aprovisionamiento web
+# SO: Windows Server 2022
+# Uso: .\Main.ps1 [-Install] [-Verify] [-Review]
+# =============================================================================
 
-$BaseDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+param([switch]$Install, [switch]$Verify, [switch]$Review, [switch]$Help)
 
-. "$BaseDir\lib\Common.ps1"
-. "$BaseDir\lib\SshFunctions.ps1"
-. "$BaseDir\lib\DhcpFunctions.ps1"
-. "$BaseDir\lib\DnsFunctions.ps1"
+. .\lib\Utils.ps1
+. .\lib\HttpFunctions.ps1
 
-# FTP: un solo script (no librería)
-$FtpScript = Join-Path $BaseDir "ScriptsBase\ftp_main.ps1"
-
-function Menu {
-    Write-Host "============================================" -ForegroundColor Magenta
-    Write-Host "      MAIN - ADMIN SISTEMAS (WINDOWS)       " -ForegroundColor Magenta
-    Write-Host "============================================" -ForegroundColor Magenta
-    Write-Host "[1] DHCP - Verificar" -ForegroundColor Magenta
-    Write-Host "[2] DHCP - Instalar" -ForegroundColor Magenta
-    Write-Host "[3] DHCP - Configurar" -ForegroundColor Magenta
-    Write-Host "[4] DHCP - Monitoreo" -ForegroundColor Magenta
-    Write-Host "[5] DNS  - Configurar Zona/Registro" -ForegroundColor Magenta
-    Write-Host "[6] DNS  - Borrar Zona" -ForegroundColor Magenta
-    Write-Host "[7] DNS  - Monitoreo" -ForegroundColor Magenta
-    Write-Host "[8] SSH  - Instalar/Configurar" -ForegroundColor Magenta
-    Write-Host "[9] SSH  - Estado" -ForegroundColor Magenta
-    Write-Host "[10] FTP - Menu" -ForegroundColor Magenta
-    Write-Host "[0] Salir" -ForegroundColor Magenta
+function Menu-Principal {
+    while ($true) {
+        Clear-Host
+        Print-Title "Aprovisionamiento Web Automatizado"
+        Print-Menu "  [1] Instalar servidor HTTP"
+        Print-Menu "  [2] Ver estado de servidores"
+        Print-Menu "  [3] Revisar respuesta HTTP (curl)"
+        Print-Menu "  [0] Salir"
+        Write-Host ""
+        Write-Host "Selecciona una opcion: " -ForegroundColor Magenta -NoNewline
+        $opcion = Read-Host
+        switch ($opcion) {
+            "1" { Menu-Instalacion }
+            "2" { Verificar-HTTP; Pausar }
+            "3" { Revisar-HTTP; Pausar }
+            "0" { Print-Success "Saliendo..."; exit 0 }
+            default { Print-Warning "Opcion invalida." }
+        }
+    }
 }
 
-do {
-    Menu
-    $op = Read-Host "Opcion"
-    switch ($op) {
-        "1"  { Dhcp-VerificarInstalacion }
-        "2"  { Dhcp-Instalar }
-        "3"  { Dhcp-Configurar }
-        "4"  { Dhcp-Monitoreo }
-        "5"  { Dns-ConfigurarZona }
-        "6"  { Dns-BorrarZona }
-        "7"  { Dns-Monitoreo }
-        "8"  { Ssh-Install }
-        "9"  { Ssh-Status }
-        "10" {
-            if (-not (Test-Path $FtpScript)) {
-                Write-Host "No existe: $FtpScript" -ForegroundColor Red
-            } else {
-                & powershell -ExecutionPolicy Bypass -File $FtpScript
-            }
-        }
-        "0"  { break }
-        default { Write-Host "Opcion invalida" -ForegroundColor Magenta }
+function Menu-Instalacion {
+    Clear-Host
+    Print-Title "Instalar Servidor HTTP"
+    Print-Menu "  [1] IIS (Obligatorio)"
+    Print-Menu "  [2] Apache2"
+    Print-Menu "  [3] Nginx"
+    Print-Menu "  [0] Volver"
+    Write-Host ""
+    Write-Host "Selecciona un servidor: " -ForegroundColor Magenta -NoNewline
+    $opcion = Read-Host
+    switch ($opcion) {
+        "1" { Setup-IIS; Pausar }
+        "2" { Setup-Apache; Pausar }
+        "3" { Setup-Nginx; Pausar }
+        "0" { return }
+        default { Print-Warning "Opcion invalida."; Pausar }
     }
+}
 
-    if ($op -ne "0") { Read-Host "Enter para continuar" | Out-Null }
-} while ($true)
+Verificar-Admin
+
+if ($Install) {
+    Menu-Instalacion
+} elseif ($Verify) {
+    Verificar-HTTP; Pausar
+} elseif ($Review) {
+    Revisar-HTTP; Pausar
+} elseif ($Help) {
+    Write-Host ""; Write-Host "USO:" -ForegroundColor Magenta
+    Print-Menu "  .\Main.ps1           Menu interactivo"
+    Print-Menu "  .\Main.ps1 -Install  Instalar servidor HTTP"
+    Print-Menu "  .\Main.ps1 -Verify   Ver estado de servidores"
+    Print-Menu "  .\Main.ps1 -Review   Revisar respuesta HTTP"
+    Print-Menu "  .\Main.ps1 -Help     Mostrar esta ayuda"
+    Write-Host ""
+} else {
+    Menu-Principal
+}
