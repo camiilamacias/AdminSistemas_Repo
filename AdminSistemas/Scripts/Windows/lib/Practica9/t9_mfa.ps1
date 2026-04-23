@@ -2,7 +2,7 @@ $MULTIOTP_EXE  = "C:\Program Files\multiOTP\multiotp.exe"
 $MULTIOTP_REG  = "Registry::HKEY_CLASSES_ROOT\CLSID\{FCEFDFAB-B0A1-4C4D-8B2B-4FF4E0A3D978}"
 $MULTIOTP_MSI  = "$PSScriptRoot\multiOTP.msi"
 $VCREDIST_EXE  = "$PSScriptRoot\VC_redist.x64.exe"
-$CSV_USUARIOS  = "$PSScriptRoot\usuarios.csv"
+$CSV_USUARIOS  = "$PSScriptRoot\usuarios_p9.csv"
 $RUTA_CLAVES   = "$env:USERPROFILE\claves_mfa.txt"
 $DOMINIO_MFA   = "empresa.local"
 
@@ -77,8 +77,18 @@ function Instalar-MultiOTP {
 function Configurar-MultiOTP {
     Print-Info "Configurando multiOTP..."
 
+    $bytes  = New-Object byte[] 20
+    [Security.Cryptography.RNGCryptoServiceProvider]::Create().GetBytes($bytes)
+    $secret = [BitConverter]::ToString($bytes).Replace("-", "").ToLower()
+
+    $secret | Out-File "$env:USERPROFILE\multiotp_secret.txt" -Encoding UTF8
+    Print-Ok "Server-secret guardado en: $env:USERPROFILE\multiotp_secret.txt"
+    Print-Info "Copia ese archivo al cliente antes de ejecutar el script cliente."
+
     if (-not (Test-Path $MULTIOTP_EXE)) {
-        Print-Err "multiotp.exe no encontrado. Instala primero multiOTP."
+        Print-Err "multiotp.exe no encontrado en: $MULTIOTP_EXE"
+        Print-Warn "Verifica que la instalacion del MSI haya sido exitosa."
+        Print-Warn "El secret.txt ya fue guardado y puede copiarse al cliente."
         return
     }
 
@@ -86,23 +96,22 @@ function Configurar-MultiOTP {
     & $MULTIOTP_EXE -config failure-delayed-time=1800  | Out-Null
     Print-Ok "Lockout: 3 intentos fallidos, bloqueo 30 minutos."
 
-    Set-ItemProperty -Path $MULTIOTP_REG -Name "cpus_logon"        -Value "0e" -ErrorAction SilentlyContinue
-    Set-ItemProperty -Path $MULTIOTP_REG -Name "cpus_unlock"       -Value "0e" -ErrorAction SilentlyContinue
-    Set-ItemProperty -Path $MULTIOTP_REG -Name "two_step_hide_otp" -Value 1    -ErrorAction SilentlyContinue
-    Set-ItemProperty -Path $MULTIOTP_REG -Name "multiOTPUPNFormat" -Value 1    -ErrorAction SilentlyContinue
+    Set-ItemProperty -Path $MULTIOTP_REG -Name "cpus_logon"        -Value "0e"
+    Set-ItemProperty -Path $MULTIOTP_REG -Name "cpus_unlock"       -Value "0e"
+    Set-ItemProperty -Path $MULTIOTP_REG -Name "two_step_hide_otp" -Value 1
+    Set-ItemProperty -Path $MULTIOTP_REG -Name "multiOTPUPNFormat" -Value 0
     Print-Ok "Credential Provider configurado."
 
-    # Generar server-secret para que el cliente pueda conectarse
-    $secretPath = "$env:USERPROFILE\multiotp_secret.txt"
-    $secret = & $MULTIOTP_EXE -showconfig 2>$null | Select-String "server-secret" | ForEach-Object { ($_ -split "=")[1].Trim() }
-    if (-not $secret) {
-        # Si no existe, generar uno nuevo
-        $secret = [System.Guid]::NewGuid().ToString("N")
-        & $MULTIOTP_EXE -config server-secret=$secret | Out-Null
+    & $MULTIOTP_EXE -config server-secret=$secret | Out-Null
+    Print-Ok "Server-secret configurado en multiOTP."
+
+    $regla = Get-NetFirewallRule -DisplayName "multiOTP" -ErrorAction SilentlyContinue
+    if (-not $regla) {
+        New-NetFirewallRule -DisplayName "multiOTP" -Direction Inbound -Protocol TCP -LocalPort 8112 -Action Allow | Out-Null
+        Print-Ok "Regla de firewall creada (TCP 8112)."
+    } else {
+        Print-Warn "Regla de firewall ya existe (se omite)."
     }
-    $secret | Out-File $secretPath -Encoding UTF8
-    Print-Ok "Server-secret guardado en: $secretPath"
-    Print-Info "Copia ese archivo al cliente para la opcion 3 de practica9_cliente.ps1"
 }
 
 
