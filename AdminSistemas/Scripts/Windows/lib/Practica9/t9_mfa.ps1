@@ -8,12 +8,12 @@ $DOMINIO_MFA   = "empresa.local"
 
 
 function Generar-ClaveTOTP {
-    $base32Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
+    $base32Chars = "ABCDEFGHJKLMNPQRSTUVWXYZ234567"
     $bytes       = New-Object byte[] 20
     [Security.Cryptography.RNGCryptoServiceProvider]::Create().GetBytes($bytes)
     $clave = ""
     for ($i = 0; $i -lt 20; $i++) {
-        $clave += $base32Chars[$bytes[$i] % 32]
+        $clave += $base32Chars[$bytes[$i] % $base32Chars.Length]
     }
     return $clave
 }
@@ -126,8 +126,8 @@ function Registrar-Usuarios-MFA {
     "" | Out-File $RUTA_CLAVES -Append -Encoding UTF8
 
     Write-Host ""
-    Print-Info "Registrando Administrador (builtin)..."
-    Registrar-Usuario-Token -Sam "Administrador"
+    Print-Info "Registrando camila..."
+    Registrar-Usuario-Token -Sam "camila"
 
     if (Test-Path $CSV_USUARIOS) {
         Write-Host ""

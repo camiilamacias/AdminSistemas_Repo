@@ -8,8 +8,8 @@ function Print-Err  { param($msg) Write-Host "[ERR]  $msg" -ForegroundColor Red 
 $DOMINIO       = "empresa.local"
 $IP_SERVIDOR   = "192.168.10.150"
 $MULTIOTP_EXE  = "C:\Program Files\multiOTP\multiotp.exe"
-$MULTIOTP_MSI  = "$PSScriptRoot\multiOTP.msi"
-$VCREDIST_EXE  = "$PSScriptRoot\VC_redist.x64.exe"
+$MULTIOTP_MSI  = "$PSScriptRoot\..\lib\Practica9\multiOTP.msi"
+$VCREDIST_EXE  = "$PSScriptRoot\..\lib\Practica9\VC_redist.x64.exe"
 $MULTIOTP_REG  = "Registry::HKEY_CLASSES_ROOT\CLSID\{FCEFDFAB-B0A1-4C4D-8B2B-4FF4E0A3D978}"
 
 
@@ -92,7 +92,7 @@ function Unir-Dominio {
 
     Write-Host ""
     Print-Info "Introduce las credenciales de administrador del dominio."
-    $credencial = Get-Credential -Message "Credenciales para unirse a $DOMINIO (ej: EMPRESA\Administrador)"
+    $credencial = Get-Credential -Message "Credenciales para unirse a $DOMINIO (ej: EMPRESA\camila)"
 
     Print-Info "Uniendo equipo al dominio $DOMINIO..."
     try {
@@ -135,7 +135,7 @@ function Instalar-MultiOTP {
 
     if (-not (Test-Path $VCREDIST_EXE)) {
         Print-Err "No se encontro: $VCREDIST_EXE"
-        Print-Info "Verifica que VC_redist.x64.exe y multiOTP.msi esten en Scripts\windows\lib\Practica9\"
+        Print-Info 'Verifica que VC_redist.x64.exe y multiOTP.msi esten en Scripts\windows\lib\Practica9\'
         return
     }
 
@@ -194,7 +194,7 @@ function Importar-Tokens-Servidor {
     }
 
     Print-Info "Introduce las credenciales de administrador del servidor."
-    $usuarioRed = Read-Host "Usuario (ej: EMPRESA\Administrador)"
+    $usuarioRed = Read-Host "Usuario (ej: EMPRESA\camila)"
     $passseg    = Read-Host "Contrasena" -AsSecureString
     $passTxt    = [Runtime.InteropServices.Marshal]::PtrToStringAuto(
                       [Runtime.InteropServices.Marshal]::SecureStringToBSTR($passseg))
@@ -281,7 +281,7 @@ function Mostrar-Instrucciones {
     Write-Host "y las registra localmente. Solo necesitas la IP del servidor"
     Write-Host "y credenciales de administrador de dominio."
     Write-Host ""
-    Write-Host "Al iniciar sesion usa: EMPRESA\<usuario>"
+    Write-Host "Al iniciar sesion usa: EMPRESA\camila"
     Write-Host "Se pedira contrasena y luego el codigo de Google Authenticator."
     Write-Host ""
 }
@@ -303,11 +303,11 @@ function Mostrar-Menu {
         $op = Read-Host "Selecciona una opcion"
 
         switch ($op) {
-            "1" { Clear-Host; Unir-Dominio;                                          Read-Host "`nEnter para continuar" }
-            "2" { Clear-Host; Instalar-RSAT; Write-Host ""; Instalar-MultiOTP;      Read-Host "`nEnter para continuar" }
-            "3" { Clear-Host; Configurar-CredentialProvider;                        Read-Host "`nEnter para continuar" }
-            "4" { Clear-Host; Importar-Tokens-Servidor;                             Read-Host "`nEnter para continuar" }
-            "5" { Mostrar-Instrucciones;                                             Read-Host "`nEnter para continuar" }
+            "1" { Clear-Host; Unir-Dominio;                  Read-Host "`nEnter para continuar" }
+            "2" { Clear-Host; Instalar-RSAT; Write-Host ""; Instalar-MultiOTP; Read-Host "`nEnter para continuar" }
+            "3" { Clear-Host; Configurar-CredentialProvider; Read-Host "`nEnter para continuar" }
+            "4" { Clear-Host; Importar-Tokens-Servidor;      Read-Host "`nEnter para continuar" }
+            "5" { Mostrar-Instrucciones;                     Read-Host "`nEnter para continuar" }
             "6" { Clear-Host; Write-Host "Saliendo..."; return }
             default { Print-Warn "Opcion no valida."; Start-Sleep -Seconds 1 }
         }
