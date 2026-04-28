@@ -188,30 +188,30 @@ function Habilitar-RDP-Usuarios {
 }
 
 
-function Crear-AdminCamila {
-    Print-Info "Verificando usuario administrador camila..."
+function Crear-AdminAdministrador {
+    Print-Info "Verificando usuario administrador Administrador..."
 
-    $existe = Get-ADUser -Filter "SamAccountName -eq 'camila'" -ErrorAction SilentlyContinue
+    $existe = Get-ADUser -Filter "SamAccountName -eq 'Administrador'" -ErrorAction SilentlyContinue
     if (-not $existe) {
-        $pass = Read-Host "Contrasena para camila" -AsSecureString
+        $pass = Read-Host "Contrasena para Administrador" -AsSecureString
         New-ADUser `
-            -Name              "camila" `
-            -SamAccountName    "camila" `
-            -UserPrincipalName "camila@$DOMINIO" `
+            -Name              "Administrador" `
+            -SamAccountName    "Administrador" `
+            -UserPrincipalName "Administrador@$DOMINIO" `
             -AccountPassword   $pass `
             -Enabled           $true
-        Print-Ok "camila creado."
+        Print-Ok "Administrador creado."
     } else {
-        Print-Warn "camila ya existe en AD."
+        Print-Warn "Administrador ya existe en AD."
     }
 
     $enDomainAdmins = Get-ADGroupMember "Admins. del dominio" -ErrorAction SilentlyContinue |
-                      Where-Object { $_.SamAccountName -eq "camila" }
+                      Where-Object { $_.SamAccountName -eq "Administrador" }
     if (-not $enDomainAdmins) {
-        Add-ADGroupMember -Identity "Admins. del dominio" -Members "camila"
-        Print-Ok "camila agregado a Admins. del dominio."
+        Add-ADGroupMember -Identity "Admins. del dominio" -Members "Administrador"
+        Print-Ok "Administrador agregado a Admins. del dominio."
     } else {
-        Print-Warn "camila ya es miembro de Admins. del dominio (se omite)."
+        Print-Warn "Administrador ya es miembro de Admins. del dominio (se omite)."
     }
 }
 
@@ -235,7 +235,7 @@ function Configurar-PerfilesMoviles {
         Print-Warn "Compartido 'Perfiles' ya existe (se omite)."
     }
 
-    $usuarios = @("camila")
+    $usuarios = @("Administrador")
     if (Test-Path $CSV_USUARIOS) {
         $usuarios += (Import-Csv $CSV_USUARIOS).Usuario
     }
@@ -359,7 +359,7 @@ function Configurar-AD {
     Write-Host "========== Configuracion de Active Directory =========="
     Write-Host ""
 
-    Crear-AdminCamila
+    Crear-AdminAdministrador
     Write-Host ""
     Crear-OUs
     Write-Host ""
