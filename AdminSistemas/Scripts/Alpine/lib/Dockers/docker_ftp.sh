@@ -4,8 +4,14 @@
 # El adaptador puente (internet) generalmente es eth2 en la config de 3 adaptadores
 
 obtener_ip_puente() {
-    # Intenta detectar la IP del adaptador con gateway (internet)
-    ip route | awk '/default/ {print $5}' | head -1 | xargs -I{} ip -4 addr show {} | awk '/inet /{split($2,a,"/"); print a[1]; exit}'
+    # Metodo 1: interfaz con ruta por defecto
+    IFACE=$(ip route | awk '/default/ {print $5; exit}')
+    if [ -n "$IFACE" ]; then
+        IP=$(ip -4 addr show "$IFACE" 2>/dev/null | awk '/inet /{split($2,a,"/"); print a[1]; exit}')
+        [ -n "$IP" ] && echo "$IP" && return
+    fi
+    # Metodo 2: primera IP no-loopback detectada en el sistema
+    ip -4 addr 2>/dev/null | awk '/inet / && !/127\.0\.0\./{split($2,a,"/"); print a[1]; exit}'
 }
 
 iniciar_ftp() {
@@ -20,6 +26,7 @@ iniciar_ftp() {
     IP_PUENTE=$(obtener_ip_puente)
     if [ -z "$IP_PUENTE" ]; then
         print_error "[ERROR] No se pudo detectar la IP del adaptador puente"
+        print_info "[INFO] Usando 0.0.0.0 como fallback (modo pasivo puede no funcionar correctamente)"
         IP_PUENTE="0.0.0.0"
     fi
     print_info "[INFO] IP del adaptador detectada: $IP_PUENTE"

@@ -1,5 +1,8 @@
 FROM nginx:alpine
 
+# Instalar iputils para ping (requerido en prueba de aislamiento de red)
+RUN apk add --no-cache iputils
+
 # Crear usuario sin privilegios para ejecutar workers
 RUN adduser -D -H -s /sbin/nologin webuser
 

@@ -26,6 +26,7 @@ body::before {
     pointer-events: none;
 }
 .terminal { max-width: 900px; margin: 0 auto; position: relative; z-index: 1; }
+.infra-img { display: block; margin: 1rem 0; max-width: 100%; height: auto; }
 .line { margin-bottom: 0.5rem; text-shadow: 0 0 5px var(--text-dim); }
 .highlight { color: var(--highlight); font-weight: bold; text-shadow: 0 0 8px #ffffff; }
 .cursor { animation: blink 1s step-end infinite; }

@@ -2,20 +2,32 @@
 # docker_web.sh - Servidor web Nginx personalizado
 WEB_DIR="$MAIN_DIR/web"
 DOCKERFILE="$MAIN_DIR/Dockerfile"
+
 construir_imagen_web() {
     print_info "[INFO] Verificando imagen web_server_img..."
 
     if docker image ls --format '{{.Repository}}' | grep -q "^web_server_img$"; then
         print_completado "[OK] Imagen web_server_img ya existe"
+        return
+    fi
+
+    if [ ! -f "$DOCKERFILE" ]; then
+        print_error "[ERROR] Dockerfile no encontrado: $DOCKERFILE"
+        exit 1
+    fi
+
+    if [ ! -d "$WEB_DIR" ]; then
+        print_error "[ERROR] Directorio web no encontrado: $WEB_DIR"
+        exit 1
+    fi
+
+    print_info "[INFO] Construyendo imagen web_server_img..."
+    docker build -f "$DOCKERFILE" -t web_server_img "$WEB_DIR" >/dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        print_completado "[OK] Imagen web_server_img construida"
     else
-        print_info "[INFO] Construyendo imagen web_server_img..."
-        docker build -f "$DOCKERFILE" -t web_server_img "$WEB_DIR" >/dev/null 2>&1
-        if [ $? -eq 0 ]; then
-            print_completado "[OK] Imagen web_server_img construida"
-        else
-            print_error "[ERROR] No se pudo construir la imagen web_server_img"
-            exit 1
-        fi
+        print_error "[ERROR] No se pudo construir la imagen web_server_img"
+        exit 1
     fi
 }
 

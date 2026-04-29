@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 120" width="400" height="120">
+  <defs>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="softglow">
+      <feGaussianBlur stdDeviation="1.2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Fondo -->
+  <rect width="400" height="120" fill="#0f0008" rx="6"/>
+
+  <!-- Titulo -->
+  <text x="200" y="16" text-anchor="middle" fill="#c2185b" font-family="Courier New, monospace" font-size="8" filter="url(#softglow)">[ infra_red :: 172.20.0.0/16 — Alpine Docker ]</text>
+
+  <!-- ======= Contenedor WEB ======= -->
+  <rect x="14" y="26" width="100" height="76" rx="4" fill="#1a0010" stroke="#ff80ab" stroke-width="1.4" filter="url(#glow)"/>
+  <!-- barra superior decorativa -->
+  <rect x="14" y="26" width="100" height="12" rx="4" fill="#3d0028"/>
+  <rect x="14" y="32" width="100" height="6" fill="#3d0028"/>
+  <circle cx="24" cy="32" r="3" fill="#ff80ab" opacity="0.7"/>
+  <circle cx="34" cy="32" r="3" fill="#c2185b" opacity="0.7"/>
+  <!-- etiqueta -->
+  <text x="64" y="52" text-anchor="middle" fill="#ff80ab" font-family="Courier New, monospace" font-size="9" font-weight="bold" filter="url(#softglow)">[ WEB ]</text>
+  <text x="64" y="63" text-anchor="middle" fill="#e8c0d0" font-family="Courier New, monospace" font-size="7">nginx:alpine</text>
+  <text x="64" y="73" text-anchor="middle" fill="#c2185b" font-family="Courier New, monospace" font-size="7">8080 → 80</text>
+  <text x="64" y="83" text-anchor="middle" fill="#c2185b" font-family="Courier New, monospace" font-size="7">web_content</text>
+  <!-- indicador online -->
+  <circle cx="32" cy="93" r="3.5" fill="#ff80ab" filter="url(#glow)"/>
+  <text x="40" y="96" fill="#ff80ab" font-family="Courier New, monospace" font-size="7">online</text>
+
+  <!-- flecha WEB → DB -->
+  <line x1="114" y1="64" x2="138" y2="64" stroke="#c2185b" stroke-width="1.2" stroke-dasharray="4,3"/>
+  <polygon points="134,60.5 140,64 134,67.5" fill="#c2185b"/>
+
+  <!-- ======= Contenedor DB ======= -->
+  <rect x="140" y="26" width="120" height="76" rx="4" fill="#1a0010" stroke="#ff80ab" stroke-width="1.4" filter="url(#glow)"/>
+  <rect x="140" y="26" width="120" height="12" rx="4" fill="#3d0028"/>
+  <rect x="140" y="32" width="120" height="6" fill="#3d0028"/>
+  <circle cx="150" cy="32" r="3" fill="#ff80ab" opacity="0.7"/>
+  <circle cx="160" cy="32" r="3" fill="#c2185b" opacity="0.7"/>
+  <text x="200" y="52" text-anchor="middle" fill="#ff80ab" font-family="Courier New, monospace" font-size="9" font-weight="bold" filter="url(#softglow)">[ DB ]</text>
+  <text x="200" y="63" text-anchor="middle" fill="#e8c0d0" font-family="Courier New, monospace" font-size="7">postgres:16-alpine</text>
+  <text x="200" y="73" text-anchor="middle" fill="#c2185b" font-family="Courier New, monospace" font-size="7">vol: db_data</text>
+  <text x="200" y="83" text-anchor="middle" fill="#c2185b" font-family="Courier New, monospace" font-size="7">backup: 02:00 AM</text>
+  <circle cx="158" cy="93" r="3.5" fill="#ff80ab" filter="url(#glow)"/>
+  <text x="166" y="96" fill="#ff80ab" font-family="Courier New, monospace" font-size="7">online</text>
+
+  <!-- flecha DB → FTP -->
+  <line x1="260" y1="64" x2="284" y2="64" stroke="#c2185b" stroke-width="1.2" stroke-dasharray="4,3"/>
+  <polygon points="280,60.5 286,64 280,67.5" fill="#c2185b"/>
+
+  <!-- ======= Contenedor FTP ======= -->
+  <rect x="286" y="26" width="100" height="76" rx="4" fill="#1a0010" stroke="#ff80ab" stroke-width="1.4" filter="url(#glow)"/>
+  <rect x="286" y="26" width="100" height="12" rx="4" fill="#3d0028"/>
+  <rect x="286" y="32" width="100" height="6" fill="#3d0028"/>
+  <circle cx="296" cy="32" r="3" fill="#ff80ab" opacity="0.7"/>
+  <circle cx="306" cy="32" r="3" fill="#c2185b" opacity="0.7"/>
+  <text x="336" y="52" text-anchor="middle" fill="#ff80ab" font-family="Courier New, monospace" font-size="9" font-weight="bold" filter="url(#softglow)">[ FTP ]</text>
+  <text x="336" y="63" text-anchor="middle" fill="#e8c0d0" font-family="Courier New, monospace" font-size="7">alpine-ftp</text>
+  <text x="336" y="73" text-anchor="middle" fill="#c2185b" font-family="Courier New, monospace" font-size="7">21 / 21000-21010</text>
+  <text x="336" y="83" text-anchor="middle" fill="#c2185b" font-family="Courier New, monospace" font-size="7">web_content</text>
+  <circle cx="304" cy="93" r="3.5" fill="#ff80ab" filter="url(#glow)"/>
+  <text x="312" y="96" fill="#ff80ab" font-family="Courier New, monospace" font-size="7">online</text>
+</svg>

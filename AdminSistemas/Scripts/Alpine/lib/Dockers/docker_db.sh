@@ -47,13 +47,23 @@ configurar_backup_db() {
     cat > "$BACKUP_SCRIPT" << EOF
 #!/bin/sh
 FECHA=\$(date +%Y%m%d_%H%M%S)
-docker exec db_server pg_dump -U $PG_USER $PG_DB > "$BACKUP_DIR/backup_\$FECHA.sql" 2>/dev/null
+BACKUP_FILE="$BACKUP_DIR/backup_\$FECHA.sql"
+docker exec db_server pg_dump -U $PG_USER $PG_DB > "\$BACKUP_FILE" 2>/dev/null
+if [ \$? -ne 0 ]; then
+    rm -f "\$BACKUP_FILE"
+fi
 ls -t "$BACKUP_DIR"/backup_*.sql 2>/dev/null | tail -n +8 | xargs rm -f
 EOF
+
+    if [ $? -ne 0 ]; then
+        print_error "[ERROR] No se pudo crear el script de respaldo en $BACKUP_SCRIPT"
+        return 1
+    fi
+
     chmod +x "$BACKUP_SCRIPT"
 
     # Cron diario a las 2:00 AM con dcron (Alpine), evita duplicados
-    ( crontab -l 2>/dev/null | grep -v backup_db; echo "0 2 * * * $BACKUP_SCRIPT" ) | crontab 
+    ( crontab -l 2>/dev/null | grep -v backup_db; echo "0 2 * * * $BACKUP_SCRIPT" ) | crontab
 
     print_completado "[OK] Respaldo automatico configurado (diario a las 2:00 AM)"
     print_info "[INFO] Respaldos en: $BACKUP_DIR"
@@ -61,11 +71,20 @@ EOF
 
 hacer_backup_db() {
     print_info "[INFO] Ejecutando respaldo manual de PostgreSQL..."
+
+    if ! docker ps --format '{{.Names}}' | grep -q "^db_server$"; then
+        print_error "[ERROR] El contenedor db_server no esta corriendo"
+        return 1
+    fi
+
     install -d -m 750 "$BACKUP_DIR" >/dev/null 2>&1
     FECHA=$(date +%Y%m%d_%H%M%S)
-    if docker exec db_server pg_dump -U "$PG_USER" "$PG_DB" > "$BACKUP_DIR/backup_$FECHA.sql" 2>/dev/null; then
-        print_completado "[OK] Respaldo guardado: $BACKUP_DIR/backup_$FECHA.sql"
+    BACKUP_FILE="$BACKUP_DIR/backup_$FECHA.sql"
+
+    if docker exec db_server pg_dump -U "$PG_USER" "$PG_DB" > "$BACKUP_FILE" 2>/dev/null; then
+        print_completado "[OK] Respaldo guardado: $BACKUP_FILE"
     else
+        rm -f "$BACKUP_FILE"
         print_error "[ERROR] No se pudo generar el respaldo"
     fi
 }

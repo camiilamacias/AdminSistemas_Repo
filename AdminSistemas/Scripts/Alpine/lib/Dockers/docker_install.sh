@@ -53,12 +53,21 @@ verificar_servicio_docker() {
 
 verificar_grupo_docker() {
     print_info "[INFO] Verificando grupo docker..."
+    CURRENT_USER="$(whoami)"
+    if [ "$CURRENT_USER" = "root" ]; then
+        print_completado "[OK] Ejecutando como root, acceso directo a Docker sin grupo adicional"
+        return
+    fi
     if id | grep -q "docker"; then
-        print_completado "[OK] Usuario ya pertenece al grupo docker"
+        print_completado "[OK] Usuario $CURRENT_USER ya pertenece al grupo docker"
     else
-        addgroup "$USER" docker >/dev/null 2>&1
-        print_info "[INFO] Usuario agregado al grupo docker"
-        print_error "[AVISO] Cierra sesion y vuelve a entrar, o ejecuta: newgrp docker"
+        addgroup "$CURRENT_USER" docker >/dev/null 2>&1
+        if [ $? -eq 0 ]; then
+            print_info "[INFO] Usuario $CURRENT_USER agregado al grupo docker"
+            print_error "[AVISO] Cierra sesion y vuelve a entrar, o ejecuta: newgrp docker"
+        else
+            print_error "[ERROR] No se pudo agregar $CURRENT_USER al grupo docker"
+        fi
         exit 0
     fi
 }
@@ -66,9 +75,12 @@ verificar_grupo_docker() {
 abrir_puertos_firewall() {
     print_info "[INFO] Configurando firewall con iptables..."
     if command -v iptables >/dev/null 2>&1; then
-        iptables -I INPUT -p tcp --dport 8080 -j ACCEPT >/dev/null 2>&1
-        iptables -I INPUT -p tcp --dport 21   -j ACCEPT >/dev/null 2>&1
-        iptables -I INPUT -p tcp --dport 21000:21010 -j ACCEPT >/dev/null 2>&1
+        iptables -C INPUT -p tcp --dport 8080 -j ACCEPT 2>/dev/null || \
+            iptables -I INPUT -p tcp --dport 8080 -j ACCEPT >/dev/null 2>&1
+        iptables -C INPUT -p tcp --dport 21 -j ACCEPT 2>/dev/null || \
+            iptables -I INPUT -p tcp --dport 21 -j ACCEPT >/dev/null 2>&1
+        iptables -C INPUT -p tcp --dport 21000:21010 -j ACCEPT 2>/dev/null || \
+            iptables -I INPUT -p tcp --dport 21000:21010 -j ACCEPT >/dev/null 2>&1
         print_completado "[OK] Puertos abiertos: 8080, 21, 21000-21010"
     else
         print_info "[INFO] iptables no disponible, omitiendo firewall"
