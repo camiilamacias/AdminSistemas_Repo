@@ -95,6 +95,23 @@ function Seleccionar-Rol {
     }
 }
 
+function Habilitar-Vista-Perfiles {
+    Print-Info "Forzando acceso de administrador a perfiles moviles..."
+
+    if (-not (Test-Path "C:\Perfiles")) {
+        Print-Warn "La carpeta C:\Perfiles no existe."
+        return
+    }
+
+    icacls "C:\Perfiles" /grant "Administradores:(OI)(CI)R" /T | Out-Null
+    Print-Ok "Acceso de lectura para administrador habilitado en C:\Perfiles."
+
+    Write-Host ""
+    Print-Info "Perfiles encontrados:"
+    Get-ChildItem "C:\Perfiles" | ForEach-Object { Write-Host "  $($_.Name)" }
+}
+
+
 function Administrar-Usuarios {
     do {
         Clear-Host
@@ -104,7 +121,8 @@ function Administrar-Usuarios {
         Write-Host "  [2] Asignar rol a usuario"
         Write-Host "  [3] Eliminar rol de usuario"
         Write-Host "  [4] Cambiar rol de usuario"
-        Write-Host "  [5] Volver"
+        Write-Host "  [5] Habilitar vista de perfiles moviles"
+        Write-Host "  [6] Volver"
         Write-Host ""
 
         $op = Read-Host "Selecciona una opcion"
@@ -145,11 +163,98 @@ function Administrar-Usuarios {
                 Cambiar-Rol -Sam $sam -NuevoRol $rol
                 Read-Host "`nEnter para continuar"
             }
-            "5" { return }
+            "5" {
+                Clear-Host
+                Habilitar-Vista-Perfiles
+                Read-Host "`nEnter para continuar"
+            }
+            "6" { return }
             default { Print-Warn "Opcion no valida."; Start-Sleep -Seconds 1 }
         }
     } while ($true)
 }
+
+function Crear-Usuario-Completo {
+    Clear-Host
+    Write-Host "========== Crear Nuevo Usuario =========="
+    Write-Host ""
+
+    $nombre   = Read-Host "Nombre"
+    $apellido = Read-Host "Apellido"
+    $usuario  = Read-Host "Nombre de usuario (SamAccountName)"
+
+    Write-Host ""
+    Write-Host "  [1] Cuates"
+    Write-Host "  [2] NoCuates"
+    $ouSel = Read-Host "OU"
+    $ou = switch ($ouSel) {
+        "1" { "Cuates"   }
+        "2" { "NoCuates" }
+        default { $null  }
+    }
+    if (-not $ou) { Print-Err "OU invalida."; return }
+
+    $pass = Read-Host "Contrasena" -AsSecureString
+
+    $existe = Get-ADUser -Filter "SamAccountName -eq '$usuario'" -ErrorAction SilentlyContinue
+    if ($existe) { Print-Err "El usuario '$usuario' ya existe en AD."; return }
+
+    Print-Info "Creando usuario en AD..."
+    try {
+        New-ADUser `
+            -Name              "$nombre $apellido" `
+            -GivenName         $nombre `
+            -Surname           $apellido `
+            -SamAccountName    $usuario `
+            -UserPrincipalName "$usuario@$DOMINIO" `
+            -AccountPassword   $pass `
+            -Path              "OU=$ou,$DC_PATH" `
+            -Enabled           $true `
+            -ProfilePath       "\\$env:COMPUTERNAME\Perfiles\$usuario"
+        Print-Ok "Usuario '$usuario' creado en OU=$ou."
+    } catch {
+        Print-Err "Error al crear usuario: $_"
+        return
+    }
+
+    $carpetaPerfil = "C:\Perfiles\$usuario"
+    if (-not (Test-Path $carpetaPerfil)) {
+        New-Item -Path $carpetaPerfil -ItemType Directory -Force | Out-Null
+    }
+    icacls $carpetaPerfil /grant "${usuario}:(OI)(CI)F"      | Out-Null
+    icacls $carpetaPerfil /grant "Administradores:(OI)(CI)R" | Out-Null
+    Print-Ok "Carpeta de perfil creada con permisos: $carpetaPerfil"
+
+    if (-not (Test-Path $MULTIOTP_EXE)) {
+        Print-Warn "multiOTP no encontrado. El usuario fue creado en AD pero sin token OTP."
+        return
+    }
+
+    Print-Info "Generando token OTP..."
+    $clave = Generar-ClaveTOTP
+    & $MULTIOTP_EXE -createga $usuario $clave | Out-Null
+
+    if ($LASTEXITCODE -eq 11) {
+        & $MULTIOTP_EXE -set $usuario prefix-pin=0 | Out-Null
+
+        ""                                        | Out-File $RUTA_CLAVES -Append -Encoding UTF8
+        "Usuario: $usuario"                       | Out-File $RUTA_CLAVES -Append -Encoding UTF8
+        "  Nombre en GA: $usuario@$DOMINIO_MFA"  | Out-File $RUTA_CLAVES -Append -Encoding UTF8
+        "  Clave:        $clave"                  | Out-File $RUTA_CLAVES -Append -Encoding UTF8
+
+        Write-Host ""
+        Write-Host "========== Token para Google Authenticator ==========" -ForegroundColor Yellow
+        Write-Host "  Usuario : $usuario"
+        Write-Host "  Clave   : " -NoNewline
+        Write-Host $clave -ForegroundColor Green
+        Write-Host "  Tipo    : Basada en tiempo (TOTP)"
+        Write-Host "=====================================================" -ForegroundColor Yellow
+        Print-Ok "Token guardado en: $RUTA_CLAVES"
+    } else {
+        Print-Err "Error al registrar token OTP (codigo: $LASTEXITCODE)."
+    }
+}
+
 
 function Mostrar-Menu {
     do {
@@ -163,7 +268,7 @@ function Mostrar-Menu {
         Write-Host "  [5] Configurar MFA"
         Write-Host "  [6] Generar Reporte de Auditoria"
         Write-Host "  [7] Administrar Usuarios"
-        Write-Host "  [8] Crear Usuario (interactivo)"
+        Write-Host "  [8] Crear nuevo usuario"
         Write-Host "  [9] Salir"
         Write-Host ""
 
@@ -177,7 +282,7 @@ function Mostrar-Menu {
             "5" { Clear-Host; Configurar-MFA;             Read-Host "`nEnter para continuar" }
             "6" { Clear-Host; Generar-Reporte;            Read-Host "`nEnter para continuar" }
             "7" { Administrar-Usuarios }
-            "8" { Crear-Usuario-Interactivo;              Read-Host "`nEnter para continuar" }
+            "8" { Crear-Usuario-Completo;                 Read-Host "`nEnter para continuar" }
             "9" { Clear-Host; Write-Host "Saliendo..."; return }
             default { Print-Warn "Opcion no valida."; Start-Sleep -Seconds 1 }
         }

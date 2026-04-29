@@ -2,10 +2,10 @@
 # utils.sh - Funciones de utilidad compartidas
 
 # Colores
-verde='\033[0;32m'
-amarillo='\033[1;33m'
-rojo='\033[0;31m'
-cyan='\033[0;36m'
+verde='\033[1;37m'
+amarillo='\033[0;37m'
+rojo='\033[0;35m'
+cyan='\033[1;35m'
 nc='\033[0m'
 
 print_titulo() {

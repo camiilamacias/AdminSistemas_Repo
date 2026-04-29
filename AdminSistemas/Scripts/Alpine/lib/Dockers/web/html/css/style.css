@@ -8,16 +8,16 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: #1a1a2e;
-    color: #e0e0e0;
+    background: #1a0a1e;
+    color: #f0e0ee;
     min-height: 100vh;
 }
 
 header {
-    background: linear-gradient(135deg, #4a0072, #9c27b0);
+    background: linear-gradient(135deg, #880050, #ff4081);
     padding: 40px 20px;
     text-align: center;
-    box-shadow: 0 4px 15px rgba(156, 39, 176, 0.4);
+    box-shadow: 0 4px 15px rgba(255, 64, 129, 0.4);
 }
 
 .header-content .logo {
@@ -34,7 +34,7 @@ header h1 {
 }
 
 .subtitle {
-    color: #e1bee7;
+    color: #fce4ec;
     font-size: 1em;
 }
 
@@ -50,9 +50,9 @@ section {
 
 h2 {
     font-size: 1.4em;
-    color: #ce93d8;
+    color: #f48fb1;
     margin-bottom: 20px;
-    border-left: 4px solid #9c27b0;
+    border-left: 4px solid #ff4081;
     padding-left: 12px;
 }
 
@@ -65,60 +65,60 @@ h2 {
 .card {
     flex: 1;
     min-width: 220px;
-    background: #16213e;
+    background: #2a0a20;
     border-radius: 10px;
     padding: 24px;
-    border: 1px solid #4a4a6a;
+    border: 1px solid #6a2050;
     transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 8px 25px rgba(156, 39, 176, 0.3);
+    box-shadow: 0 8px 25px rgba(255, 64, 129, 0.3);
 }
 
 .card h3 {
-    color: #ce93d8;
+    color: #f48fb1;
     margin-bottom: 12px;
     font-size: 1.1em;
 }
 
 .card p {
-    color: #b0b0c0;
+    color: #d4a0b8;
     margin-bottom: 6px;
     font-size: 0.9em;
 }
 
 .card strong {
-    color: #e0e0ff;
+    color: #ffe4ef;
 }
 
 .card code {
-    background: #0f3460;
+    background: #4a0030;
     padding: 2px 6px;
     border-radius: 4px;
     font-size: 0.85em;
-    color: #f8bbd0;
+    color: #ffcdd2;
 }
 
 .info-box {
-    background: #16213e;
+    background: #2a0a20;
     border-radius: 10px;
     padding: 24px;
-    border: 1px solid #4a4a6a;
+    border: 1px solid #6a2050;
 }
 
 .info-box p {
     margin-bottom: 8px;
-    color: #b0b0c0;
+    color: #d4a0b8;
 }
 
 .info-box strong {
-    color: #ce93d8;
+    color: #f48fb1;
 }
 
 a {
-    color: #f48fb1;
+    color: #ff80ab;
     text-decoration: none;
 }
 
@@ -129,8 +129,8 @@ a:hover {
 footer {
     text-align: center;
     padding: 20px;
-    color: #6a6a8a;
-    border-top: 1px solid #2a2a4a;
+    color: #8a4a6a;
+    border-top: 1px solid #4a1a3a;
     margin-top: 40px;
     font-size: 0.85em;
 }

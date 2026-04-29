@@ -32,9 +32,39 @@ function Unir-Dominio {
     Write-Host ""
 
     $equipo = Get-WmiObject Win32_ComputerSystem
-    if ($equipo.PartOfDomain -and $equipo.Domain -eq $DOMINIO) {
-        Print-Warn "Este equipo ya esta unido a $DOMINIO (se omite)."
-        return
+
+    if ($equipo.PartOfDomain) {
+        Write-Host ""
+        if ($equipo.Domain -eq $DOMINIO) {
+            Print-Warn "Este equipo ya esta en el dominio $DOMINIO."
+        } else {
+            Print-Warn "Este equipo esta en el dominio: $($equipo.Domain)"
+        }
+        Write-Host ""
+        Write-Host "  [1] Salir del dominio actual y unirse a $DOMINIO"
+        Write-Host "  [2] Cancelar"
+        Write-Host ""
+        $opDom = Read-Host "Selecciona una opcion"
+
+        if ($opDom -ne "1") {
+            Print-Warn "Operacion cancelada."
+            return
+        }
+
+        Print-Info "Introduce las credenciales de administrador del dominio actual."
+        $dominioNetbios = $equipo.Domain.Split(".")[0].ToUpper()
+        $credActual = Get-Credential -UserName "$dominioNetbios\Administrador" -Message "Credenciales para salir de $($equipo.Domain)"
+
+        Print-Info "Saliendo del dominio $($equipo.Domain)..."
+        try {
+            Remove-Computer -UnjoinDomainCredential $credActual -WorkgroupName "WORKGROUP" -Force -ErrorAction Stop
+            Print-Ok "Salido del dominio correctamente."
+        } catch {
+            Print-Err "No se pudo salir del dominio: $_"
+            Print-Info "Asegurate de ingresar el usuario como DOMINIO\usuario (ej: EMPRESA\Administrador)"
+            return
+        }
+        Write-Host ""
     }
 
     Write-Host ""
@@ -287,6 +317,99 @@ function Mostrar-Instrucciones {
 }
 
 
+function Limpiar-Usuarios-MultiOTP {
+    if (-not (Test-Path $MULTIOTP_EXE)) {
+        Print-Err "multiotp.exe no encontrado."
+        return
+    }
+
+    $usersDir = "C:\Program Files\multiOTP\users"
+
+    if (-not (Test-Path $usersDir)) {
+        Print-Warn "No se encontro la carpeta de usuarios de multiOTP."
+        return
+    }
+
+    $archivos = Get-ChildItem $usersDir -File -ErrorAction SilentlyContinue
+
+    if (-not $archivos -or $archivos.Count -eq 0) {
+        Print-Warn "No hay usuarios registrados en multiOTP."
+        return
+    }
+
+    Write-Host ""
+    Print-Info "Usuarios registrados en multiOTP:"
+    foreach ($f in $archivos) { Write-Host "  - $($f.BaseName)" }
+
+    Write-Host ""
+    $confirm = Read-Host "Confirmar eliminacion de todos los usuarios (s/n)"
+    if ($confirm -ne "s") {
+        Print-Warn "Operacion cancelada."
+        return
+    }
+
+    Write-Host ""
+    $eliminados = 0
+    foreach ($f in $archivos) {
+        $sam = $f.BaseName
+        & $MULTIOTP_EXE -delete $sam | Out-Null
+        if ($LASTEXITCODE -eq 0) {
+            Print-Ok "  $sam - eliminado"
+            $eliminados++
+        } else {
+            Print-Err "  $sam - error al eliminar (codigo: $LASTEXITCODE)"
+        }
+    }
+
+    Write-Host ""
+    Print-Info "Resumen: $eliminados usuario(s) eliminado(s)."
+    Print-Warn "Vuelve a ejecutar la opcion 4 para reimportar los tokens del servidor."
+}
+
+
+function Salir-Dominio {
+    $equipo = Get-WmiObject Win32_ComputerSystem
+
+    if (-not $equipo.PartOfDomain) {
+        Print-Warn "Este equipo no esta en ningun dominio."
+        return
+    }
+
+    Print-Info "Dominio actual: $($equipo.Domain)"
+    Write-Host ""
+    Write-Host "  [1] Salir normalmente (servidor disponible)"
+    Write-Host "  [2] Forzar salida (servidor apagado o no disponible)"
+    Write-Host "  [3] Cancelar"
+    Write-Host ""
+    $modo = Read-Host "Selecciona una opcion"
+
+    if ($modo -eq "3" -or [string]::IsNullOrWhiteSpace($modo)) {
+        Print-Warn "Operacion cancelada."
+        return
+    }
+
+    Print-Info "Saliendo del dominio $($equipo.Domain)..."
+
+    if ($modo -eq "1") {
+        $dominioNetbios = $equipo.Domain.Split(".")[0].ToUpper()
+        $cred = Get-Credential -UserName "$dominioNetbios\Administrador" -Message "Credenciales para salir de $($equipo.Domain)"
+        $pass = $cred.GetNetworkCredential().Password
+        $result = $equipo.UnjoinDomainOrWorkgroup($pass, $cred.UserName, 0)
+    } else {
+        $result = $equipo.UnjoinDomainOrWorkgroup($null, $null, 0)
+    }
+
+    if ($result.ReturnValue -eq 0) {
+        Print-Ok "Salido del dominio correctamente."
+        Print-Warn "Reinicia el equipo para aplicar los cambios."
+        Read-Host "`nEnter para reiniciar"
+        Restart-Computer -Force
+    } else {
+        Print-Err "Error al salir del dominio (codigo: $($result.ReturnValue))."
+    }
+}
+
+
 function Mostrar-Menu {
     do {
         Clear-Host
@@ -297,7 +420,9 @@ function Mostrar-Menu {
         Write-Host "  [3] Configurar Credential Provider"
         Write-Host "  [4] Importar tokens del servidor"
         Write-Host "  [5] Ver instrucciones"
-        Write-Host "  [6] Salir"
+        Write-Host "  [6] Limpiar usuarios multiOTP"
+        Write-Host "  [7] Salir del dominio actual"
+        Write-Host "  [8] Salir"
         Write-Host ""
 
         $op = Read-Host "Selecciona una opcion"
@@ -308,7 +433,9 @@ function Mostrar-Menu {
             "3" { Clear-Host; Configurar-CredentialProvider; Read-Host "`nEnter para continuar" }
             "4" { Clear-Host; Importar-Tokens-Servidor;      Read-Host "`nEnter para continuar" }
             "5" { Mostrar-Instrucciones;                     Read-Host "`nEnter para continuar" }
-            "6" { Clear-Host; Write-Host "Saliendo..."; return }
+            "6" { Clear-Host; Limpiar-Usuarios-MultiOTP;     Read-Host "`nEnter para continuar" }
+            "7" { Clear-Host; Salir-Dominio;                 Read-Host "`nEnter para continuar" }
+            "8" { Clear-Host; Write-Host "Saliendo..."; return }
             default { Print-Warn "Opcion no valida."; Start-Sleep -Seconds 1 }
         }
     } while ($true)
