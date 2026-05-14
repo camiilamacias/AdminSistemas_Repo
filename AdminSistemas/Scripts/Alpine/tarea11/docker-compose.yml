@@ -1,0 +1,72 @@
+services:
+
+  nginx:
+    image: nginx:alpine
+    container_name: t11_nginx
+    ports:
+      - "80:80"
+    volumes:
+      - /opt/t11/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - red_publica
+      - red_datos
+    restart: always
+    depends_on:
+      - app_interna
+
+  app_interna:
+    image: httpd:alpine
+    container_name: t11_app
+    volumes:
+      - /opt/t11/html:/usr/local/apache2/htdocs:ro
+    networks:
+      - red_publica
+    restart: always
+
+  postgresql:
+    image: postgres:16-alpine
+    container_name: t11_db
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_DB: ${DB_NAME}
+      PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: "False"
+      PGADMIN_CONFIG_WTF_CSRF_ENABLED: "False"
+    volumes:
+      - t11_db_data:/var/lib/postgresql/data
+    networks:
+      - red_datos
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: t11_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASS}
+      PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: "False"
+      PGADMIN_CONFIG_WTF_CSRF_ENABLED: "False"
+    ports:
+      - "127.0.0.1:${PGADMIN_PORT:-5050}:80"
+    networks:
+      - red_datos
+    restart: always
+    depends_on:
+      postgresql:
+        condition: service_healthy
+
+networks:
+  red_publica:
+    driver: bridge
+  red_datos:
+    driver: bridge
+
+volumes:
+  t11_db_data:
+    name: t11_db_data
